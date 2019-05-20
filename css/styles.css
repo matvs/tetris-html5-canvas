@@ -18,7 +18,7 @@ canvas#board
   /*  border:2px solid #CCCCCC;*/
    /* background-color:#EFEFEF;*/
     display:block;
-    background:url("board background.png");
+    background:url("../images/board\ background.png");
     background-repeat:repeat;
     position:absolute;
     top:5px;
@@ -60,7 +60,7 @@ canvas#board
 #start
 {
     position:absolute;
-     background:url('start.png');
+     background:url('../images/start.png');
      background-position:-25px -8px;
      width:119px;
      height:69px;
@@ -72,7 +72,7 @@ canvas#board
 #start:hover
 {
      opacity:0.9;
-     background:url('start.png');
+     background:url('../images/start.png');
      background-position:-30px -12px;
      
 }
