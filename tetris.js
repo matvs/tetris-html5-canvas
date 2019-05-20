@@ -23,6 +23,8 @@ var TetrisGame = {
     start: function (optionsArg = {}) {
         var options = Object.assign(this.defaultOptions, optionsArg);
         this.tetriminos = Object.values(this.tetriminosDefinition);
+        this.points = 0;
+        this.level = 1000;
         if (typeof this.currentTetrimino !== 'undefined') {
             clearInterval(this.currentTetrimino.interval);
         }
@@ -76,7 +78,7 @@ var TetrisGame = {
         if (next !== false) {
             this.queue[1] = next;
         }
-        this.currentTetrimino = new Tetrimino(0, -this.size * 2, this.tetriminos[this.queue[0]], this.queue[0], this);
+        this.currentTetrimino = new Tetrimino(0, -this.size * 2, this.tetriminos[this.queue[0]], this.queue[0]);
         this.currentTetrimino.start();
         this.drawHeadsUp(this.tetriminos[this.queue[1]]);
         this.queue[0] = this.queue[1];
@@ -93,17 +95,17 @@ var TetrisGame = {
             this.frozen.clear();
             this.frozen.x = 0;
             this.frozen.y = -2 * this.size;
-            nextTetrimino();
+            this.nextTetrimino();
         }
         else {
             this.queue[0] = this.frozen.pozycja;
             this.frozen = this.currentTetrimino;
-            drawFrozen(this.frozen.tetrimino);
+            this.drawFrozen(this.frozen.tetrimino);
             clearInterval(this.frozen.interval);
             this.frozen.clear();
             this.frozen.x = 0;
             this.frozen.y = -2 * this.size;
-            nextTetrimino(this.queue[1]);
+            this.nextTetrimino(this.queue[1]);
         }
 
     },
@@ -151,26 +153,26 @@ var TetrisGame = {
 
     checkBoardState: function () {
         for (var i = 0; i < 20; i++) {
-            var licznik = 0;
+            var counter = 0;
             for (var j = 0; j < 10; j++) {
                 if (this.boardModel[i][j][0] == true)
-                    ++licznik;
+                    ++counter;
                 else
                     break;
 
             }
 
 
-            if (licznik == 10) {
-                for (var kolumna = 0; kolumna < 10; ++kolumna)
-                    this.boardModel[i][kolumna][0] = false;
-                points++;
-                if (this.level >= 200 && points % 10 === 0)
+            if (counter == 10) {
+                for (var col = 0; col < 10; ++col)
+                    this.boardModel[i][col][0] = false;
+                this.points++;
+                if (this.level >= 200 && this.points % 10 === 0)
                     this.level -= 100;
-                this.pointsDOMContainer.innerHTML = points;
-                ctxBoard.clearRect(0, i * this.size, this.size * 10, this.size);
+                this.pointsDOMContainer.innerHTML = this.points;
+                this.ctxBoard.clearRect(0, i * this.size, this.size * 10, this.size);
                 if (i > 1)
-                    wszystko_w_dol(i);
+                    this.moveRowsDown(i);
 
             }
 
@@ -181,17 +183,16 @@ var TetrisGame = {
 
     },
 
-    wszystko_w_dol: function (wiersz) {
-        ctxBoard.strokeStyle = "#FFFFFF";
-        for (var i = wiersz - 1; i >= 0; --i) {
+    moveRowsDown: function (row) {
+        this.ctxBoard.strokeStyle = "#FFFFFF";
+        for (var i = row - 1; i >= 0; --i) {
             for (var j = 0; j < 10; j++) {
                 if (this.boardModel[i][j][0] == true) {
-                    console.log("kolumna " + j + " wiersz " + i + " jest zajeta komorka");
-                    ctxBoard.clearRect(this.size * j, this.size * i, this.size, this.size);
+                    this.ctxBoard.clearRect(this.size * j, this.size * i, this.size, this.size);
                     //ctxBoard.fillStyle="#AAAAFF";
-                    ctxBoard.fillStyle = this.boardModel[i][j][1];
-                    ctxBoard.fillRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 8, this.size - 8);
-                    ctxBoard.strokeRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 4, this.size - 4);
+                    this.ctxBoard.fillStyle = this.boardModel[i][j][1];
+                    this.ctxBoard.fillRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 8, this.size - 8);
+                    this.ctxBoard.strokeRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 4, this.size - 4);
                     this.boardModel[i][j][0] = false;
                     this.boardModel[i + 1][j][0] = true;
                 }
@@ -337,7 +338,7 @@ var TetrisGame = {
     }
 }
 
-function Tetrimino(x, y, tetrimino, pos, gameObj) {
+function Tetrimino(x, y, tetrimino, pos) {
     var self = this;
     self.tetrimino = tetrimino;
     self.pozycja = pos;
@@ -349,14 +350,14 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
     self.y = y;
     self.ghostX;
     self.ghostY;
-    self.dy = gameObj.size;
+    self.dy = TetrisGame.size;
     self.dx = 0;
     self.interval;
     self.isAccelerating = false
 
     /* indeks z x lub y ixy*/
     self.ixy = function (z) {
-        return z / gameObj.size;
+        return z / TetrisGame.size;
     },
 
         self.detectCollision = function (x, y, direction) {
@@ -366,13 +367,13 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
             for (bit = 0x8000; bit > 0; bit = bit >> 1) {
 
                 if (bit & block) {
-                    xx = x + gameObj.size * col;
-                    yy = y + gameObj.size * row;
+                    xx = x + TetrisGame.size * col;
+                    yy = y + TetrisGame.size * row;
 
                     if (self.ixy(xx) >= 0 && self.ixy(xx) < 10 && self.ixy(yy) >= 0 && self.ixy(yy) < 20)
-                        if (gameObj.boardModel[self.ixy(yy)][self.ixy(xx)][0] == true)
+                        if (TetrisGame.boardModel[self.ixy(yy)][self.ixy(xx)][0] == true)
                             return true;
-                    if (xx < 0 || xx + gameObj.size > gameObj.boardCanvas.width || yy + gameObj.size > gameObj.boardCanvas.height)
+                    if (xx < 0 || xx + TetrisGame.size > TetrisGame.boardCanvas.width || yy + TetrisGame.size > TetrisGame.boardCanvas.height)
                         return true;
                 }
                 col = (col + 1) % 4;
@@ -389,11 +390,11 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
         x = self.x;
         y = self.y;
         for (bit = 0x8000; bit > 0; bit = bit >> 1) {
-            gameObj.ctxBoard.fillStyle = self.color;
-            gameObj.ctxBoard.strokeStyle = "#FFFFFF";
+            TetrisGame.ctxBoard.fillStyle = self.color;
+            TetrisGame.ctxBoard.strokeStyle = "#FFFFFF";
             if (bit & self.block) {
-                gameObj.ctxBoard.fillRect(x + gameObj.size * col + 2, y + gameObj.size * row + 2, gameObj.size - 8, gameObj.size - 8);
-                gameObj.ctxBoard.strokeRect(x + gameObj.size * col + 2, y + gameObj.size * row + 2, gameObj.size - 4, gameObj.size - 4);
+                TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 8, TetrisGame.size - 8);
+                TetrisGame.ctxBoard.strokeRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 4, TetrisGame.size - 4);
             }
             col = (col + 1) % 4;
             if (col == 0)
@@ -408,17 +409,17 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
     self.drawGhost = function () {
         ghost_y = 0;
         while (!self.detectCollision(self.x, self.y + ghost_y, self.orientation)) {
-            ghost_y += gameObj.size;
+            ghost_y += TetrisGame.size;
         }
         x = self.x;
-        y = self.y + ghost_y - gameObj.size;
+        y = self.y + ghost_y - TetrisGame.size;
         self.ghostX = x;
         self.ghostY = y;
         col = row = 0;
         for (bit = 0x8000; bit > 0; bit = bit >> 1) {
-            gameObj.ctxBoard.fillStyle = "rgba(0, 0, 0, 0.7)"
+            TetrisGame.ctxBoard.fillStyle = "rgba(0, 0, 0, 0.7)"
             if (bit & self.block) {
-                gameObj.ctxBoard.fillRect(x + gameObj.size * col, y + gameObj.size * row, gameObj.size, gameObj.size);
+                TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
 
             }
             col = (col + 1) % 4;
@@ -438,7 +439,7 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
 
             if (bit & self.block) {
 
-                gameObj.ctxBoard.clearRect(x + gameObj.size * col, y + gameObj.size * row, gameObj.size, gameObj.size);
+                TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
             }
 
             col = (col + 1) % 4;
@@ -459,7 +460,7 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
 
             if (bit & self.block) {
 
-                gameObj.ctxBoard.clearRect(x + gameObj.size * col, y + gameObj.size * row, gameObj.size, gameObj.size);
+                TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
             }
 
             col = (col + 1) % 4;
@@ -483,7 +484,7 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
     }
     self.start = function () {
 
-        self.interval = setInterval(self.goDown, gameObj.level);
+        self.interval = setInterval(self.goDown, TetrisGame.level);
 
     }
 
@@ -497,8 +498,8 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
 
             if (bit & self.block) {
 
-                gameObj.boardModel[self.ixy(self.y + gameObj.size * row)][self.ixy(self.x + gameObj.size * col)][0] = true;
-                gameObj.boardModel[self.ixy(self.y + gameObj.size * row)][self.ixy(self.x + gameObj.size * col)][1] = self.color;
+                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][0] = true;
+                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][1] = self.color;
                 if (self.ixy(self.y) == 19) {
                     //dis.style.display = "block";
                 }
@@ -510,8 +511,8 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
         }
 
 
-        gameObj.checkBoardState();
-        gameObj.nextTetrimino();
+        TetrisGame.checkBoardState();
+        TetrisGame.nextTetrimino();
     }
 
     self.accelerate = function () {
@@ -531,13 +532,13 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
     self.slowDown = function () {
         if (self.isAccelerating == true) {
             clearInterval(self.interval);
-            self.interval = setInterval(self.goDown, level);
+            self.interval = setInterval(self.goDown, TetrisGame.level);
             self.isAccelerating = false;
         }
     }
 
     self.moveLeft = function () {
-        self.dx = -gameObj.size;
+        self.dx = -TetrisGame.size;
         if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
             return 0;
         }
@@ -549,7 +550,7 @@ function Tetrimino(x, y, tetrimino, pos, gameObj) {
     }
 
     self.moveRight = function () {
-        self.dx = gameObj.size;
+        self.dx = TetrisGame.size;
 
         if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
             return 0;
