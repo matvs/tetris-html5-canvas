@@ -18,23 +18,39 @@ var TetrisGame = {
         T: { "blocks": [0x0E40, 0x4C40, 0x4E00, 0x4640], "color": '#09B212' }
     },
 
+    init: function () {
+        this.onKeyDownHandler = this.onKeyDownHandler.bind(this);
+        this.onKeyUpHandler = this.onKeyUpHandler.bind(this);
+        this.handleTouchStart = this.handleTouchStart.bind(this);
+        this.handleTouchMove = this.handleTouchMove.bind(this);
+        this.handleTouchEnd = this.handleTouchEnd.bind(this);
+
+        this.tetriminos = Object.values(this.tetriminosDefinition);
+
+        return this;
+    },
 
     start: function (optionsArg = {}) {
         var options = Object.assign(this.defaultOptions, optionsArg);
-        this.tetriminos = Object.values(this.tetriminosDefinition);
+  
         this.points = 0;
         this.level = 1000;
+
+
         if (typeof this.currentTetrimino !== 'undefined') {
             clearInterval(this.currentTetrimino.interval);
         }
 
+        this.removeKeyEvents();
+
+
         this.boardCanvas = document.getElementById(options.boardCanvasId);
         this.ctxBoard = this.boardCanvas.getContext("2d");
         var width = document.getElementById(options.widthInputId).value;
-        var a = width / this.boardCanvas.width;
+        var ratio = width / this.boardCanvas.width;
 
         this.boardCanvas.width = width;
-        this.boardCanvas.height *= a;
+        this.boardCanvas.height *= ratio;
 
         this.headsUpCanvas = document.getElementById(options.headsUpCanvasId);
         this.ctxHeadsUp = this.headsUpCanvas.getContext("2d");
@@ -63,6 +79,7 @@ var TetrisGame = {
         }
 
         this.pointsDOMContainer = document.getElementById(options.pointOutputId);
+        this.pointsDOMContainer.innerHTML = this.points;
 
 
         this.queue = [];
@@ -200,142 +217,161 @@ var TetrisGame = {
         }
     },
 
-    bindKeyEvents: function () {
-        var self = this;
-        document.onkeydown = function (e) {
-            // w lewo -37, w gore 38, w prawo 39, w dol 40, z 90, x 88
-            //	alert(e.keyCode);
-            if (e.keyCode == 40) {
-                //strzalka w dol
-                e.preventDefault();
-                self.currentTetrimino.accelerate();
-            }
-            else if (e.keyCode == 37) {
-                e.preventDefault();
-                //strzalka w lewo
-                self.currentTetrimino.moveLeft();
-            }
-            else if (e.keyCode == 39) {
-                e.preventDefault();
-                //strzalka w prawo
-                self.currentTetrimino.moveRight();
-            }
-            else if (e.keyCode == 90 || e.keyCode == 89) {
-                e.preventDefault();
-                //z
-                self.currentTetrimino.turnCounterClockwise();
-            }
-            else if (e.keyCode == 88 || e.keyCode == 38) {
-                e.preventDefault();
-                //x
-                self.currentTetrimino.turnClockWise();
-            }
-            else if (e.keyCode == 67) {
-                e.preventDefault();
-                //c
-                self.freeze();
-            }
+    gameOver: function () {
+        this.ctxBoard.fillStyle = "rgba(0, 0, 0, 0.5)";
+        this.ctxBoard.fillRect(0, 0, this.size * 10, this.size * 20);
+        this.ctxBoard.font = '50px Indie Flower'
+        this.ctxBoard.fillStyle = "#FFFFFF"
+        this.ctxBoard.fillText("Game Over", this.size * 1.5, this.size * 5)
+        this.removeKeyEvents();
+    },
+
+    onKeyDownHandler: function (e) {
+        // w lewo -37, w gore 38, w prawo 39, w dol 40, z 90, x 88
+        //	alert(e.keyCode);
+        if (e.keyCode == 40) {
+            //strzalka w dol
+            e.preventDefault();
+            this.currentTetrimino.accelerate();
         }
-
-        document.onkeyup = function (e) {
-
-
-            if (e.keyCode == 40) {
-                e.preventDefault();
-                //strzalka w dol
-                self.currentTetrimino.slowDown();
-            }
-            else if (e.keyCode == 32) {
-                e.preventDefault();
-                //c
-                self.currentTetrimino.drop();
-            }
-
+        else if (e.keyCode == 37) {
+            e.preventDefault();
+            //strzalka w lewo
+            this.currentTetrimino.moveLeft();
         }
+        else if (e.keyCode == 39) {
+            e.preventDefault();
+            //strzalka w prawo
+            this.currentTetrimino.moveRight();
+        }
+        else if (e.keyCode == 90 || e.keyCode == 89) {
+            e.preventDefault();
+            //z
+            this.currentTetrimino.turnCounterClockwise();
+        }
+        else if (e.keyCode == 88 || e.keyCode == 38) {
+            e.preventDefault();
+            //x
+            this.currentTetrimino.turnClockWise();
+        }
+        else if (e.keyCode == 67) {
+            e.preventDefault();
+            //c
+            this.freeze();
+        }
+    },
 
-        document.addEventListener('touchstart', handleTouchStart, false);
-        //	document.addEventListener('touchend', handleTouchEnd, false);
-        document.addEventListener('touchmove', handleTouchMove, false);
+    onKeyUpHandler: function (e) {
+        if (e.keyCode == 40) {
+            e.preventDefault();
+            //strzalka w dol
+            this.currentTetrimino.slowDown();
+        }
+        else if (e.keyCode == 32) {
+            e.preventDefault();
+            //c
+            this.currentTetrimino.drop();
+        }
+    },
 
+    touchEventsCoords: {
+        xDown: null,
+        yDown: null,
+        xDown2: null
+    },
 
-        var xDown = null;
-        var yDown = null;
+     handleTouchStart: function(evt) {
+        this.touchEventsCoords.xDown = evt.touches[0].clientX;
+        this.touchEventsCoords.yDown = evt.touches[0].clientY;
 
-        var xDown2 = null;
-        function handleTouchStart(evt) {
-            xDown = evt.touches[0].clientX;
-            yDown = evt.touches[0].clientY;
+        this.touchEventsCoords.xDown2 = this.touchEventsCoords.xDown;
+        //alert(evt.touches[0].force);
+        //half=window.innerWidth/2;
+        /*if(xDown>half)
+            this.currentTetrimino.turnClockWise();
+        else 
+            this.currentTetrimino.turnCounterClockwise();*/
 
-            xDown2 = xDown;
-            //alert(evt.touches[0].force);
-            //half=window.innerWidth/2;
-            /*if(xDown>half)
-                this.currentTetrimino.turnClockWise();
-            else 
-                this.currentTetrimino.turnCounterClockwise();*/
+    },
 
-        };
+    handleTouchMove: function(evt) {
+        if (!this.touchEventsCoords.xDown || !this.touchEventsCoords.yDown) {
+            return;
+        }
+        evt.preventDefault();
+        var xUp = evt.touches[0].clientX;
+        var yUp = evt.touches[0].clientY;
 
-        function handleTouchEnd(evt) {
-            x = evt.touches[0].clientX;
-            y = evt.touches[0].clientY;
-            //alert(evt.touches[0].force);
-            half = window.innerWidth / 2;
-            alert("x " + x + " xDown" + xDown + " half " + half);
-            if (Math.abs(x - xDown2) < 30) {
-                if (x > half)
-                    self.currentTetrimino.turnClockWise();
-                else
-                    self.currentTetrimino.turnCounterClockwise();
-            }
-            xDown2 = null;
+        var xDiff = this.touchEventsCoords.xDown - xUp;
+        var yDiff = this.touchEventsCoords.yDown - yUp;
 
-        };
-
-        function handleTouchMove(evt) {
-            if (!xDown || !yDown) {
-                return;
-            }
-            evt.preventDefault();
-            var xUp = evt.touches[0].clientX;
-            var yUp = evt.touches[0].clientY;
-
-            var xDiff = xDown - xUp;
-            var yDiff = yDown - yUp;
-
-            if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
-                if (xDiff > 0) {
-                    /* left swipe */
-                    for (i = 0; i < xDiff / 15; ++i)
-                        self.currentTetrimino.moveLeft();
-                } else {
-                    /* right swipe */
-                    for (i = 0; i < -xDiff / 15; ++i)
-                        self.currentTetrimino.moveRight();
-                }
-
+        if (Math.abs(xDiff) > Math.abs(yDiff)) {/*most significant*/
+            if (xDiff > 0) {
+                /* left swipe */
+                for (i = 0; i < xDiff / 15; ++i)
+                    this.currentTetrimino.moveLeft();
             } else {
-                if (yDiff > 0) {
-                    /* up swipe */
-                    //	this.currentTetrimino.slowDown();
-                    self.currentTetrimino.turnClockWise();
-                } else {
-                    /* down swipe */
-                    if (self.currentTetrimino.isAccelerating == false)
-                        self.currentTetrimino.accelerate();
-                    else
-                        self.currentTetrimino.slowDown();
-                }
-
-
+                /* right swipe */
+                for (i = 0; i < -xDiff / 15; ++i)
+                    this.currentTetrimino.moveRight();
             }
 
-            xDown = null;
-            yDown = null;
+        } else {
+            if (yDiff > 0) {
+                /* up swipe */
+                //	this.currentTetrimino.slowDown();
+                this.currentTetrimino.turnClockWise();
+            } else {
+                /* down swipe */
+                if (this.currentTetrimino.isAccelerating == false)
+                    this.currentTetrimino.accelerate();
+                else
+                    this.currentTetrimino.slowDown();
+            }
+
 
         }
+
+        this.touchEventsCoords.xDown = null;
+        this.touchEventsCoords.yDown = null;
+
+    },
+
+    handleTouchEnd: function(evt) {
+        x = evt.touches[0].clientX;
+        y = evt.touches[0].clientY;
+        //alert(evt.touches[0].force);
+        half = window.innerWidth / 2;
+        //alert("x " + x + " xDown" + this.touchEventsCoords.xDown + " half " + half);
+        if (Math.abs(x - this.touchEventsCoords.xDown2) < 30) {
+            if (x > half)
+                this.currentTetrimino.turnClockWise();
+            else
+                this.currentTetrimino.turnCounterClockwise();
+        }
+        this.touchEventsCoords.xDown2 = null;
+
+    },
+
+    bindKeyEvents: function () {
+        document.addEventListener('keydown', this.onKeyDownHandler);
+        document.addEventListener('keyup', this.onKeyUpHandler);
+
+        document.addEventListener('touchstart', this.handleTouchStart, false);
+        //	document.addEventListener('touchend', this.handleTouchEnd, false);
+        document.addEventListener('touchmove', this.handleTouchMove, false);
+
+    },
+
+    removeKeyEvents: function () {
+        document.removeEventListener('keydown', this.onKeyDownHandler);
+        document.removeEventListener('keyup', this.onKeyUpHandler);
+        document.removeEventListener('touchstart', this.handleTouchStart, false);
+        //	document.removeEventListener('touchend', this.handleTouchEnd, false);
+        document.removeEventListener('touchmove', this.handleTouchMove, false);
     }
-}
+}.init();
+
 
 /*Tetrimino Class*/
 function Tetrimino(x, y, tetrimino, pos) {
@@ -361,10 +397,10 @@ function Tetrimino(x, y, tetrimino, pos) {
     }
 
     self.detectCollision = function (x, y, direction) {
-        col = 0;
-        row = 0;
-        block = self.blocks[direction];
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+        var col = 0;
+        var row = 0;
+        var block = self.blocks[direction];
+        for (var bit = 0x8000; bit > 0; bit = bit >> 1) {
 
             if (bit & block) {
                 xx = x + TetrisGame.size * col;
@@ -376,212 +412,214 @@ function Tetrimino(x, y, tetrimino, pos) {
                 if (xx < 0 || xx + TetrisGame.size > TetrisGame.boardCanvas.width || yy + TetrisGame.size > TetrisGame.boardCanvas.height)
                     return true;
             }
+
             col = (col + 1) % 4;
             if (col == 0)
                 ++row;
 
         }
+
         return false;
+    }
+
+self.draw = function (ghost = true) {
+    var col = 0;
+    var row = 0;
+    var x = self.x;
+    var y = self.y;
+    for (var bit = 0x8000; bit > 0; bit = bit >> 1) {
+        TetrisGame.ctxBoard.fillStyle = self.color;
+        TetrisGame.ctxBoard.strokeStyle = "#FFFFFF";
+        if (bit & self.block) {
+            TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 8, TetrisGame.size - 8);
+            TetrisGame.ctxBoard.strokeRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 4, TetrisGame.size - 4);
+        }
+        col = (col + 1) % 4;
+        if (col == 0)
+            ++row;
 
     }
-    self.draw = function (ghost = true) {
-        col = 0;
-        row = 0;
-        x = self.x;
-        y = self.y;
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
-            TetrisGame.ctxBoard.fillStyle = self.color;
-            TetrisGame.ctxBoard.strokeStyle = "#FFFFFF";
-            if (bit & self.block) {
-                TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 8, TetrisGame.size - 8);
-                TetrisGame.ctxBoard.strokeRect(x + TetrisGame.size * col + 2, y + TetrisGame.size * row + 2, TetrisGame.size - 4, TetrisGame.size - 4);
-            }
-            col = (col + 1) % 4;
-            if (col == 0)
-                ++row;
+
+    if (ghost)
+        self.drawGhost();
+}
+
+self.drawGhost = function () {
+    var ghost_y = 0;
+    while (!self.detectCollision(self.x, self.y + ghost_y, self.orientation)) {
+        ghost_y += TetrisGame.size;
+    }
+    x = self.x;
+    y = self.y + ghost_y - TetrisGame.size;
+    self.ghostX = x;
+    self.ghostY = y;
+    col = row = 0;
+    for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+        TetrisGame.ctxBoard.fillStyle = "rgba(0, 0, 0, 0.7)"
+        if (bit & self.block) {
+            TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
 
         }
-
-        if (ghost)
-            self.drawGhost();
-    }
-
-    self.drawGhost = function () {
-        ghost_y = 0;
-        while (!self.detectCollision(self.x, self.y + ghost_y, self.orientation)) {
-            ghost_y += TetrisGame.size;
-        }
-        x = self.x;
-        y = self.y + ghost_y - TetrisGame.size;
-        self.ghostX = x;
-        self.ghostY = y;
-        col = row = 0;
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
-            TetrisGame.ctxBoard.fillStyle = "rgba(0, 0, 0, 0.7)"
-            if (bit & self.block) {
-                TetrisGame.ctxBoard.fillRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
-
-            }
-            col = (col + 1) % 4;
-            if (col == 0)
-                ++row;
-
-        }
-    }
-
-    self.clear = function () {
-        col = 0;
-        row = 0;
-
-        x = self.x;
-        y = self.y;
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
-
-            if (bit & self.block) {
-
-                TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
-            }
-
-            col = (col + 1) % 4;
-            if (col == 0)
-                ++row;
-
-        }
-        self.clearGhost();
+        col = (col + 1) % 4;
+        if (col == 0)
+            ++row;
 
     }
+}
 
-    self.clearGhost = function () {
-        col = 0;
-        row = 0;
-        x = self.ghostX;
-        y = self.ghostY;
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+self.clear = function () {
+    var col = 0;
+    var row = 0;
 
-            if (bit & self.block) {
+    var x = self.x;
+    var y = self.y;
+    for (var bit = 0x8000; bit > 0; bit = bit >> 1) {
 
-                TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
-            }
+        if (bit & self.block) {
 
-            col = (col + 1) % 4;
-            if (col == 0)
-                ++row;
-
+            TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
         }
 
+        col = (col + 1) % 4;
+        if (col == 0)
+            ++row;
+
     }
+    self.clearGhost();
 
-    self.goDown = function () {
-        if (self.detectCollision(self.x, self.y + self.dy, self.orientation)) {
-            //setTimeout(self.stop,2500);
-            self.stop();
-            return 0;
+}
 
+self.clearGhost = function () {
+    var col = 0;
+    var row = 0;
+    var x = self.ghostX;
+    var y = self.ghostY;
+    for (var bit = 0x8000; bit > 0; bit = bit >> 1) {
+
+        if (bit & self.block) {
+
+            TetrisGame.ctxBoard.clearRect(x + TetrisGame.size * col, y + TetrisGame.size * row, TetrisGame.size, TetrisGame.size);
         }
-        self.clear();
-        self.y += self.dy;
-        self.draw();
-    }
-    self.start = function () {
 
-        self.interval = setInterval(self.goDown, TetrisGame.level);
+        col = (col + 1) % 4;
+        if (col == 0)
+            ++row;
 
     }
 
-    self.stop = function () {
-        clearInterval(self.interval);
-        self.clearGhost();
-        self.draw(false);
-        col = 0;
-        row = 0;
-        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+}
 
-            if (bit & self.block) {
+self.goDown = function () {
+    if (self.detectCollision(self.x, self.y + self.dy, self.orientation)) {
+        //setTimeout(self.stop,2500);
+        self.stop();
+        return 0;
 
+    }
+    self.clear();
+    self.y += self.dy;
+    self.draw();
+}
+self.start = function () {
+
+    self.interval = setInterval(self.goDown, TetrisGame.level);
+
+}
+
+self.stop = function () {
+    clearInterval(self.interval);
+    self.clearGhost();
+    self.draw(false);
+    col = 0;
+    row = 0;
+    for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+
+        if (bit & self.block) {
+
+            try {
                 TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][0] = true;
                 TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][1] = self.color;
-                if (self.ixy(self.y) == 19) {
-                    //dis.style.display = "block";
-                }
+            } catch (e) {
+                TetrisGame.gameOver();
+                return;
             }
-            col = (col + 1) % 4;
-            if (col == 0)
-                ++row;
-
         }
+        col = (col + 1) % 4;
+        if (col == 0)
+            ++row;
 
-
-        TetrisGame.checkBoardState();
-        TetrisGame.nextTetrimino();
     }
+    TetrisGame.checkBoardState();
+    TetrisGame.nextTetrimino();
+}
 
-    self.accelerate = function () {
-        if (self.isAccelerating == false) {
-            clearInterval(self.interval);
-            self.interval = setInterval(self.goDown, 100);
-            self.isAccelerating = true;
-        }
-    }
-
-    self.drop = function () {
+self.accelerate = function () {
+    if (self.isAccelerating == false) {
         clearInterval(self.interval);
-        self.interval = setInterval(self.goDown, -100);
+        self.interval = setInterval(self.goDown, 100);
+        self.isAccelerating = true;
+    }
+}
 
+self.drop = function () {
+    clearInterval(self.interval);
+    self.interval = setInterval(self.goDown, -100);
+
+}
+
+self.slowDown = function () {
+    if (self.isAccelerating == true) {
+        clearInterval(self.interval);
+        self.interval = setInterval(self.goDown, TetrisGame.level);
+        self.isAccelerating = false;
+    }
+}
+
+self.moveLeft = function () {
+    self.dx = -TetrisGame.size;
+    if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
+        return 0;
     }
 
-    self.slowDown = function () {
-        if (self.isAccelerating == true) {
-            clearInterval(self.interval);
-            self.interval = setInterval(self.goDown, TetrisGame.level);
-            self.isAccelerating = false;
-        }
+    self.clear();
+    self.x += self.dx;
+    self.draw();
+
+}
+
+self.moveRight = function () {
+    self.dx = TetrisGame.size;
+
+    if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
+        return 0;
     }
+    self.clear();
+    self.x += self.dx;
+    self.draw();
 
-    self.moveLeft = function () {
-        self.dx = -TetrisGame.size;
-        if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
-            return 0;
-        }
+}
 
-        self.clear();
-        self.x += self.dx;
-        self.draw();
-
-    }
-
-    self.moveRight = function () {
-        self.dx = TetrisGame.size;
-
-        if (self.detectCollision(self.x + self.dx, self.y, self.orientation)) {
-            return 0;
-        }
-        self.clear();
-        self.x += self.dx;
-        self.draw();
+self.turnCounterClockwise = function () {
+    if (self.detectCollision(self.x, self.y, (self.orientation + 3) % 4)) {
+        return 0;
 
     }
+    self.orientation = (self.orientation + 3) % 4;
+    self.clear();
+    self.block = self.blocks[self.orientation];
+    self.draw();
 
-    self.turnCounterClockwise = function () {
-        if (self.detectCollision(self.x, self.y, (self.orientation + 3) % 4)) {
-            return 0;
+}
 
-        }
-        self.orientation = (self.orientation + 3) % 4;
+self.turnClockWise = function () {
+    if (self.detectCollision(self.x, self.y, (self.orientation + 1) % 4)) {
+        return 0;
+    }
+    else {
+        self.orientation = (self.orientation + 1) % 4;
         self.clear();
         self.block = self.blocks[self.orientation];
         self.draw();
-
     }
-
-    self.turnClockWise = function () {
-        if (self.detectCollision(self.x, self.y, (self.orientation + 1) % 4)) {
-            return 0;
-        }
-        else {
-            self.orientation = (self.orientation + 1) % 4;
-            self.clear();
-            self.block = self.blocks[self.orientation];
-            self.draw();
-        }
-    }
+}
 }
