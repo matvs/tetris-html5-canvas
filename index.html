@@ -1,0 +1,41 @@
+<!DOCTYPE>
+<html>
+
+<head>
+	<title>Tetris</title>
+
+	<link href='http://fonts.googleapis.com/css?family=Indie+Flower' rel='stylesheet' type='text/css'>
+	<link href="styles.css" rel='stylesheet'>
+	<script src="tetris.js"></script>
+</head>
+
+<body>
+	<div id="interface">
+		<canvas id="board" width="300" height="600"></canvas>
+		<canvas id="headsUp" width="100" height="100"></canvas>
+		<canvas id="frozen" width="100" height="100"></canvas>
+
+		<button id="start" onclick="startGame()"></button>
+
+		<label for="width">Type width of the board : <br />and press start to play </label>
+		<input type="text" id="width" value="300" />
+		<p id="sterowanie"> &larr; left <br />
+			&rarr; right <br />
+			&darr; accelerate <br />
+			spacebar drop <br />
+			z/y rotate counterclockwise <br />
+			x/&uarr; rotate clockwise </br>
+			c freeze </br>
+			&hearts;&hearts;&hearts; </br> 
+			You can also play <br /> on touch devices, <br />move your finger: <br />
+			&larr; left <br />
+			&rarr; right <br />
+			&darr; accelerate/slow down <br />
+			&uarr; rotate clockwise
+		</p>
+		<p class="points">Punkty <span id="points">0</span></p>
+	</div>
+
+</body>
+
+</html>

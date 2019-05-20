@@ -1,0 +1,125 @@
+*
+{
+    margin:0;
+    padding:0;
+    border:0;
+}
+body
+{
+    background-color:#3939d1 ;
+    
+    position:relative;
+}
+canvas#board
+{
+    margin:0 auto;
+    /*width:300px;
+    height:600px;*/
+  /*  border:2px solid #CCCCCC;*/
+   /* background-color:#EFEFEF;*/
+    display:block;
+    background:url("board background.png");
+    background-repeat:repeat;
+    position:absolute;
+    top:5px;
+    border: 29px solid #3972d1;
+    border-radius: 31px;
+    left:130px;
+}
+
+#headsUp
+{
+    background: none repeat scroll 0 0 #603aff;
+    position: absolute;
+    right: -48px;
+    top: 36px;
+     border: 3px solid #340ed3;
+}
+
+#frozen
+{
+    background: none repeat scroll 0 0 #603aff;
+    position: absolute;
+    right: -48px;
+    top: 243px;
+     border: 3px solid #340ed3;
+}
+
+
+#interface
+{
+     margin:0 auto;
+     margin-top:20px;
+    
+     width:560px;
+     height:725px;
+     position:relative;
+     
+}
+
+#start
+{
+    position:absolute;
+     background:url('start.png');
+     background-position:-25px -8px;
+     width:119px;
+     height:69px;
+     cursor:pointer;
+      left: -117px;
+    top: 33px;
+
+}
+#start:hover
+{
+     opacity:0.9;
+     background:url('start.png');
+     background-position:-30px -12px;
+     
+}
+
+#klocki
+{
+    display:none;
+}
+
+
+label[for="width"]
+{
+ font-family: 'Indie Flower';
+ color: white;
+font-size: 30px;
+left: -194px;
+position: absolute;
+top: 116px;
+}
+#width
+{
+font-family: 'Indie Flower';
+border: 4px solid #7e7eff;
+height: 69px;
+left: -104px;
+position: absolute;
+top: 213px;
+width: 97px;
+color:#7e7eff;
+font-size: 37px;
+padding: 13px;
+}
+#sterowanie
+{
+font-family: 'Indie Flower';
+font-size: 25px;
+left: -157px;
+position: absolute;
+top: 302px;
+color:white;
+}
+.points
+{
+font-family: 'Indie Flower';
+font-size: 25px;
+color:white;
+position: absolute;
+right: -33px;
+top: 152px;
+}
