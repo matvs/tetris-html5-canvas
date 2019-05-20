@@ -70,12 +70,11 @@ var TetrisGame = {
         for (var i = 0; i < 20; i++) {
             this.boardModel[i] = [];
             for (var j = 0; j < 10; j++) {
-                this.boardModel[i][j] = []
-                this.boardModel[i][j][0] = false; // zajety, czy nie
-                this.boardModel[i][j][1] = "none"; // color
-
+                this.boardModel[i][j] = {
+                    occupied: false,
+                    color: "none"
+                }
             }
-
         }
 
         this.pointsDOMContainer = document.getElementById(options.pointOutputId);
@@ -171,7 +170,7 @@ var TetrisGame = {
         for (var i = 0; i < 20; i++) {
             var counter = 0;
             for (var j = 0; j < 10; j++) {
-                if (this.boardModel[i][j][0] == true)
+                if (this.boardModel[i][j].occupied == true)
                     ++counter;
                 else
                     break;
@@ -181,7 +180,7 @@ var TetrisGame = {
 
             if (counter == 10) {
                 for (var col = 0; col < 10; ++col)
-                    this.boardModel[i][col][0] = false;
+                    this.boardModel[i][col].occupied = false;
                 this.points++;
                 if (this.level >= 200 && this.points % 10 === 0)
                     this.level -= 100;
@@ -203,14 +202,14 @@ var TetrisGame = {
         this.ctxBoard.strokeStyle = "#FFFFFF";
         for (var i = row - 1; i >= 0; --i) {
             for (var j = 0; j < 10; j++) {
-                if (this.boardModel[i][j][0] == true) {
+                if (this.boardModel[i][j].occupied == true) {
                     this.ctxBoard.clearRect(this.size * j, this.size * i, this.size, this.size);
                     //ctxBoard.fillStyle="#AAAAFF";
-                    this.ctxBoard.fillStyle = this.boardModel[i][j][1];
+                    this.ctxBoard.fillStyle = this.boardModel[i][j].color;
                     this.ctxBoard.fillRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 8, this.size - 8);
                     this.ctxBoard.strokeRect(this.size * j + 2, this.size * i + 2 + this.size, this.size - 4, this.size - 4);
-                    this.boardModel[i][j][0] = false;
-                    this.boardModel[i + 1][j][0] = true;
+                    this.boardModel[i][j].occupied = false;
+                    this.boardModel[i + 1][j].occupied = true;
                 }
             }
 
@@ -407,7 +406,7 @@ function Tetrimino(x, y, tetrimino, pos) {
                 yy = y + TetrisGame.size * row;
 
                 if (self.ixy(xx) >= 0 && self.ixy(xx) < 10 && self.ixy(yy) >= 0 && self.ixy(yy) < 20)
-                    if (TetrisGame.boardModel[self.ixy(yy)][self.ixy(xx)][0] == true)
+                    if (TetrisGame.boardModel[self.ixy(yy)][self.ixy(xx)].occupied == true)
                         return true;
                 if (xx < 0 || xx + TetrisGame.size > TetrisGame.boardCanvas.width || yy + TetrisGame.size > TetrisGame.boardCanvas.height)
                     return true;
@@ -537,8 +536,8 @@ self.stop = function () {
         if (bit & self.block) {
 
             try {
-                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][0] = true;
-                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)][1] = self.color;
+                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)].occupied = true;
+                TetrisGame.boardModel[self.ixy(self.y + TetrisGame.size * row)][self.ixy(self.x + TetrisGame.size * col)].color = self.color;
             } catch (e) {
                 TetrisGame.gameOver();
                 return;
