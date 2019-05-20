@@ -337,6 +337,7 @@ var TetrisGame = {
     }
 }
 
+/*Tetrimino Class*/
 function Tetrimino(x, y, tetrimino, pos) {
     var self = this;
     self.tetrimino = tetrimino;
@@ -357,32 +358,32 @@ function Tetrimino(x, y, tetrimino, pos) {
     /* indeks z x lub y ixy*/
     self.ixy = function (z) {
         return z / TetrisGame.size;
-    },
+    }
 
-        self.detectCollision = function (x, y, direction) {
-            col = 0;
-            row = 0;
-            block = self.blocks[direction];
-            for (bit = 0x8000; bit > 0; bit = bit >> 1) {
+    self.detectCollision = function (x, y, direction) {
+        col = 0;
+        row = 0;
+        block = self.blocks[direction];
+        for (bit = 0x8000; bit > 0; bit = bit >> 1) {
 
-                if (bit & block) {
-                    xx = x + TetrisGame.size * col;
-                    yy = y + TetrisGame.size * row;
+            if (bit & block) {
+                xx = x + TetrisGame.size * col;
+                yy = y + TetrisGame.size * row;
 
-                    if (self.ixy(xx) >= 0 && self.ixy(xx) < 10 && self.ixy(yy) >= 0 && self.ixy(yy) < 20)
-                        if (TetrisGame.boardModel[self.ixy(yy)][self.ixy(xx)][0] == true)
-                            return true;
-                    if (xx < 0 || xx + TetrisGame.size > TetrisGame.boardCanvas.width || yy + TetrisGame.size > TetrisGame.boardCanvas.height)
+                if (self.ixy(xx) >= 0 && self.ixy(xx) < 10 && self.ixy(yy) >= 0 && self.ixy(yy) < 20)
+                    if (TetrisGame.boardModel[self.ixy(yy)][self.ixy(xx)][0] == true)
                         return true;
-                }
-                col = (col + 1) % 4;
-                if (col == 0)
-                    ++row;
-
+                if (xx < 0 || xx + TetrisGame.size > TetrisGame.boardCanvas.width || yy + TetrisGame.size > TetrisGame.boardCanvas.height)
+                    return true;
             }
-            return false;
+            col = (col + 1) % 4;
+            if (col == 0)
+                ++row;
 
         }
+        return false;
+
+    }
     self.draw = function (ghost = true) {
         col = 0;
         row = 0;
