@@ -1,4 +1,3 @@
-
 var TetrisGame = {
     points: 0,
     level: 1000,
